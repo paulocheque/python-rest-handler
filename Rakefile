@@ -88,5 +88,5 @@ task :publish => [:tests, :tag] do
   virtual_env("python setup.py sdist upload")
 end
 
-task :default => [:server]
+task :default => [:tests]
 
