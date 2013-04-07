@@ -114,6 +114,13 @@ class MyWebFrameworkRequestManager(RequestManager):
     def redirect(self, url, permanent=False, status=None, **kwargs): pass
 ```
 
+After that, you may use thie Request Manager in any RestHandler you want to:
+
+```python
+class MyRestHandler(RestHandler):
+    request_manager = MyWebFrameworkRequestManager
+```
+
 Data Managers
 ------------------------
 
@@ -130,7 +137,14 @@ class MyDataManager(DataManager):
     def delete_instance(self, instance): pass
 ```
 
-You can create a general data manager, and let the user subclass your DataManager when he/shw wants to customize some behavior, for example:
+After that, you may use thie Request Manager in any RestHandler you want to:
+
+```python
+class MyRestHandler(RestHandler):
+    data_manager = MyWebFrameworkRequestManager
+```
+
+Tip: You can create a general data manager, and let the user subclass your DataManager when he/shw wants to customize some behavior, for example:
 
 ```python
 class AnimalDataManager(MyDataManager):
