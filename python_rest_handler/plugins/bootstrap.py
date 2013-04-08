@@ -65,11 +65,11 @@ def bs_select_field(field, options, error=None, **kwargs):
 
 
 def bs_button(**kwargs):
-    button_id = kwargs.get('button_id', 'save')
+    button_id = kwargs.get('button_id', 'btn-save')
     label = kwargs.get('label', 'Save')
 
     widget = '''
-    <button id="%(button_id)s" name="%(button_id)s" class="btn btn-primary">%(label)s</button>
+    <button id="%(button_id)s" class="btn btn-primary">%(label)s</button>
 ''' % {'button_id':button_id, 'label':label}
 
     return bootstrap_panel(None, widget, **kwargs)
