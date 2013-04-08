@@ -17,29 +17,33 @@ def bootstrap_panel(field, widget, error=None, **kwargs):
 ''' % {'has_error':has_error, 'label':label, 'widget':widget, 'error':error, 'help_text':help_text}
 
 
-def input_field(field, value=None, error=None, **kwargs):
+def bs_input_text(field, value=None, error=None, **kwargs):
     input_type = kwargs.get('input_type', 'text')
     label = kwargs.get('label', field)
-    autocomplete = kwargs.get('autocomplete', False)
-    autocomplete = "on" if autocomplete else "off"
+    value = value if value else ''
     required = kwargs.get('required', True)
     required = 'required=""' if required else ''
-    value = value if value else ''
+    editable = kwargs.get('editable', True)
+    editable = '' if editable else 'uneditable-input'
+    autocomplete = kwargs.get('autocomplete', False)
+    autocomplete = "on" if autocomplete else "off"
 
-    widget = '<input id="%(field)s" name="%(field)s" type="%(input_type)s" placeholder="%(label)s" class="input-xlarge" %(required)s autocomplete="%(autocomplete)s" value="%(value)s">' % \
-    {'field':field, 'input_type':input_type, 'label':label, 'required':required, 'autocomplete':autocomplete, 'value':value}
+    widget = '<input id="%(field)s" name="%(field)s" type="%(input_type)s" placeholder="%(label)s" class="input-xlarge %(editable)s" %(required)s autocomplete="%(autocomplete)s" value="%(value)s">' % \
+    {'field':field, 'input_type':input_type, 'label':label, 'required':required, 'editable':editable, 'autocomplete':autocomplete, 'value':value}
 
     return bootstrap_panel(field, widget, error=error, **kwargs)
 
 
-def password_field(field, value=None, error=None, **kwargs):
+def bs_input_password(field, value=None, error=None, **kwargs):
     kwargs['input_type'] = 'password'
-    return input_field(field, value=value, error=error, **kwargs)
+    return bs_input_text(field, value=value, error=error, **kwargs)
 
 
-def select_field(field, options, error=None, **kwargs):
+def bs_select_field(field, options, error=None, **kwargs):
     required = kwargs.get('required', True)
     required = 'required=""' if required else ''
+    editable = kwargs.get('editable', True)
+    editable = '' if editable else 'uneditable-input'
     selected_value = kwargs.get('selected_value', '')
     option_widgets = []
     for option in options:
@@ -52,15 +56,15 @@ def select_field(field, options, error=None, **kwargs):
     option_widgets = ''.join(option_widgets)
 
     widget = '''
-    <select id="%(field)s" name="%(field)s" %(required)s>
+    <select id="%(field)s" name="%(field)s" %(required)s class="%(editable)s">
       %(option_widgets)s
     </select>
-''' % {'field':field, 'required':required, 'option_widgets':option_widgets}
+''' % {'field':field, 'required':required, 'editable':editable, 'option_widgets':option_widgets}
 
     return bootstrap_panel(field, widget, error=error, **kwargs)
 
 
-def button(**kwargs):
+def bs_button(**kwargs):
     button_id = kwargs.get('button_id', 'save')
     label = kwargs.get('label', 'Save')
 
