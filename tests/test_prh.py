@@ -20,6 +20,18 @@ class ManualInheritanceTests(unittest.TestCase):
         handler = CustomHandler()
         self.assertEquals(RestHandler, handler.rest_handler.__class__)
 
+    def test_valid_request_handler_instance_receive_default_attributes(self):
+        class CustomHandler(RestRequestHandler):
+            model = Model
+            data_manager = DM
+        handler = CustomHandler()
+        self.assertEquals('model/', handler.template_path)
+        self.assertEquals('list.html', handler.list_template)
+        self.assertEquals('edit.html', handler.edit_template)
+        self.assertEquals('show.html', handler.show_template)
+        self.assertEquals('/', handler.redirect_pos_action)
+        self.assertEquals(None, handler.extra_attributes)
+
     def test_valid_request_handler_instance_create_an_instance_of_its_data_manager(self):
         class CustomHandler(RestRequestHandler):
             model = Model
@@ -136,7 +148,6 @@ class RestHandlerTests(unittest.TestCase):
         self.assertEquals('ModelCustomHandler1', cls.__name__)
         cls = rest_handler(Model, DM, CustomHandler)
         self.assertEquals('ModelCustomHandler2', cls.__name__)
-
 
 
 class RestRoutesTests(unittest.TestCase):

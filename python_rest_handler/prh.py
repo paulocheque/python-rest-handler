@@ -27,10 +27,7 @@ class CrudHandler(object):
         return self.handler.render(template_name, **kwargs)
 
     def redirect(self, url=None, permanent=False, status=None, **kwargs):
-        if self.handler.redirect_pos_action:
-            url = self.handler.redirect_pos_action
-        else:
-            url = '/'
+        url = self.handler.redirect_pos_action
         message = kwargs.get('message', None)
         return self.handler.redirect(url, permanent=permanent, status=status, **kwargs)
 
@@ -145,6 +142,11 @@ class RestRequestHandler(object):
     model = None
     data_manager = None
     template_path = None
+    list_template = 'list.html'
+    edit_template = 'edit.html'
+    show_template = 'show.html'
+    redirect_pos_action = '/'
+    extra_attributes = None
     def raise403(self): pass
     def raise404(self): pass
     def get_request_uri(self): pass
@@ -186,25 +188,24 @@ def routes(route_list):
 
 dynamic_classes_cache = {}
 
-def rest_handler(model, data_manager, base_handler, **kwargs):
+def get_unique_handler_class_name(model, base_handler):
     model_name = model.__name__
-    attrs = {}
-    attrs['model'] = model
-    attrs['data_manager'] = data_manager
-    attrs['template_path'] = kwargs.get('template_path', model_name.lower() + '/')
-    attrs['list_template'] = kwargs.get('list_template', 'list.html')
-    attrs['edit_template'] = kwargs.get('edit_template', 'edit.html')
-    attrs['show_template'] = kwargs.get('show_template', 'show.html')
-    attrs['redirect_pos_action'] = kwargs.get('redirect_pos_action', '/')
-    attrs['extra_attributes'] = kwargs.get('extra_attributes', None)
-    handler = kwargs.get('handler', None)
     base_name = base_handler.__name__
-
     class_name = model_name + base_name
     index = dynamic_classes_cache.setdefault(class_name, 1)
     unique_class_name = class_name + str(index)
     index += 1
     dynamic_classes_cache[class_name] = index
+    return unique_class_name
+
+
+def rest_handler(model, data_manager, base_handler, handler=None, **kwargs):
+    attrs = {}
+    attrs.update(kwargs)
+    attrs['model'] = model
+    attrs['data_manager'] = data_manager
+
+    unique_class_name = get_unique_handler_class_name(model, base_handler)
 
     if handler:
         rest_handler = type(unique_class_name, (handler, base_handler), attrs)
@@ -213,9 +214,9 @@ def rest_handler(model, data_manager, base_handler, **kwargs):
     return rest_handler
 
 
-def rest_routes(model, data_manager, base_handler, **kwargs):
+def rest_routes(model, data_manager, base_handler, handler=None, **kwargs):
     prefix = kwargs.get('prefix', model.__name__.lower())
-    handler = rest_handler(model, data_manager, base_handler, **kwargs)
+    handler = rest_handler(model, data_manager, base_handler, handler=handler, **kwargs)
     return [
         (r'/%s/?' % prefix, handler),
         (r'/%s/new/?' % prefix, handler),
