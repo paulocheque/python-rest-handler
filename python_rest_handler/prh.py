@@ -33,8 +33,6 @@ class CrudHandler(object):
         else:
             url = '/'
         message = kwargs.get('message', None)
-        # if self.handler.extra_attributes:
-        #     kwargs.update(self.handler.extra_attributes)
         return self.handler.redirect(url, permanent=permanent, status=status, **kwargs)
 
     def page_list(self, alert=None):
@@ -44,7 +42,11 @@ class CrudHandler(object):
         return self.page_edit(None)
 
     def page_show(self, instance):
-        return self.render(self.handler.show_template, obj=instance)
+        value_for = lambda field: getattr(instance, field, '') if getattr(instance, field, '') else ''
+        has_error = lambda field: False
+        error_for = lambda field: ''
+        return self.render(self.handler.show_template, obj=instance,
+                    value_for=value_for, has_error=has_error, error_for=error_for)
 
     def page_edit(self, instance, exception=None, alert=None):
         errors = None
