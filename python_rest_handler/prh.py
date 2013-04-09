@@ -5,9 +5,8 @@ from python_rest_handler.utils import ObjectDict
 
 
 class DataManager(object):
-    model = None
-
-    def __init__(self, request_handler):
+    def __init__(self, model, request_handler):
+        self.model = model
         self.handler = request_handler
 
     def instance_list(self): return []
@@ -158,8 +157,6 @@ class RestRequestHandlerMetaclass(type):
     def __init__(cls, name, bases, attrs):
         if cls.model and not cls.template_path:
             cls.template_path = cls.model.__name__.lower() + '/'
-        if cls.data_manager:
-            cls.data_manager.model = cls.model
         return super(RestRequestHandlerMetaclass, cls).__init__(name, bases, attrs)
 
     def __call__(cls, *args):
@@ -170,7 +167,7 @@ class RestRequestHandlerMetaclass(type):
         if not result.data_manager:
             raise NotImplementedError(msg % (cls.__name__, 'data_manager'))
         result.rest_handler = RestHandler(result)
-        result.data_manager = result.data_manager(result)
+        result.data_manager = result.data_manager(result.model, result)
         return result
 
 

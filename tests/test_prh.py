@@ -20,6 +20,35 @@ class ManualInheritanceTests(unittest.TestCase):
         handler = CustomHandler()
         self.assertEquals(RestHandler, handler.rest_handler.__class__)
 
+    def test_valid_request_handler_instance_create_an_instance_of_its_data_manager(self):
+        class CustomHandler(RestRequestHandler):
+            model = Model
+            data_manager = DM
+        handler = CustomHandler()
+        self.assertEquals(True, isinstance(handler.data_manager, DM))
+        self.assertEquals(handler, handler.data_manager.handler)
+        self.assertEquals(Model, handler.data_manager.model)
+
+    def test_two_subclasses_of_a_rest_request_handler_must_not_share_instance_variables(self):
+        class Model1(object): pass
+        class Model2(object): pass
+        class DM1(DataManager): pass
+        class DM2(DataManager): pass
+        class CustomHandler(RestRequestHandler): pass
+        class CustomHandler1(CustomHandler):
+            model = Model1
+            data_manager = DM1
+        class CustomHandler2(CustomHandler):
+            model = Model2
+            data_manager = DM2
+        handler1 = CustomHandler1()
+        handler2 = CustomHandler2()
+        self.assertEquals(True, handler1.rest_handler != handler2.rest_handler)
+        self.assertEquals(DM1, handler1.data_manager.__class__)
+        self.assertEquals(DM2, handler2.data_manager.__class__)
+        self.assertEquals(Model1, handler1.data_manager.model)
+        self.assertEquals(Model2, handler2.data_manager.model)
+
     @raises(NotImplementedError)
     def test_request_handler_instance_must_raise_an_self_explained_error_if_there_is_no_model(self):
         class CustomHandler(RestRequestHandler):
