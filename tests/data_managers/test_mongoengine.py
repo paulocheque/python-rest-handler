@@ -30,7 +30,6 @@ class MongoEngineTestCase(unittest.TestCase):
 
 class MongoEngineDataManagerTests(MongoEngineTestCase, DataManagerAbstractTests):
     def get_data_manager(self):
-        dm = MongoEngineDataManager(None)
-        dm.model = MongoModel
+        dm = MongoEngineDataManager(MongoModel, None)
         return dm
 
