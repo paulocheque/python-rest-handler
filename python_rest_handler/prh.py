@@ -185,6 +185,8 @@ def routes(route_list):
     return routes
 
 
+dynamic_classes_cache = {}
+
 def rest_handler(model, data_manager, base_handler, **kwargs):
     model_name = model.__name__
     attrs = {}
@@ -198,10 +200,17 @@ def rest_handler(model, data_manager, base_handler, **kwargs):
     attrs['extra_attributes'] = kwargs.get('extra_attributes', None)
     handler = kwargs.get('handler', None)
     base_name = base_handler.__name__
+
+    class_name = model_name + base_name
+    index = dynamic_classes_cache.setdefault(class_name, 1)
+    unique_class_name = class_name + str(index)
+    index += 1
+    dynamic_classes_cache[class_name] = index
+
     if handler:
-        rest_handler = type(model_name + base_name, (handler, base_handler), attrs)
+        rest_handler = type(unique_class_name, (handler, base_handler), attrs)
     else:
-        rest_handler = type(model_name + base_name, (base_handler,), attrs)
+        rest_handler = type(unique_class_name, (base_handler,), attrs)
     return rest_handler
 
 

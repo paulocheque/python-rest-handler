@@ -100,6 +100,15 @@ class RestHandlerTests(unittest.TestCase):
         self.assertEquals('/x', cls.redirect_pos_action)
         self.assertEquals([func], cls.extra_attributes)
 
+    def test_it_must_add_number_sufix_in_the_class_name_to_avoid_conflict(self):
+        class CustomHandler(RestRequestHandler):
+            pass
+        cls = rest_handler(Model, DM, CustomHandler)
+        self.assertEquals('ModelCustomHandler1', cls.__name__)
+        cls = rest_handler(Model, DM, CustomHandler)
+        self.assertEquals('ModelCustomHandler2', cls.__name__)
+
+
 
 class RestRoutesTests(unittest.TestCase):
     def test_rest_routes_created_routes_using_model_name_as_route_prefix(self):
