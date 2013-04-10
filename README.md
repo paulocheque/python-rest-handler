@@ -27,7 +27,7 @@ PS: The project **Tornado Rest Handler** (https://github.com/paulocheque/tornado
 Handlers
 ------------------------
 
-All the get/post/put/delete methods are implemented for you, but if you want to customize some behavior, you write your own handler:
+To create a handler for your Web framework, you need to create a subclass of **RestRequestHandler**
 
 ```python
 import python_rest_handler
@@ -41,7 +41,7 @@ class YourRequestRestHandler(YOUR_FRAMEWORK_BASE_HANDLER, python_rest_handler.Re
     def redirect(self, url, permanent=False, status=None, **kwargs): pass
 ```
 
-Also, it is necessary to link your request handler to the get/post/put/delete methods of the **RestHandler** class.
+All the get/post/put/delete methods are implemented for you, but you need to link them with your Framework's Request Handler:
 
 ```python
     def get(self, instance_id=None, edit=False): # or other method here
@@ -61,7 +61,7 @@ Also, it is necessary to link your request handler to the get/post/put/delete me
         return self.rest_handler.delete(instance_id=instance_id)
 ```
 
-Just be sure that a **RequestRestHandler** **requires** a **model** and **DataManager** to be instantiated.
+Just be sure that a **RestRequestHandler** **requires** a **model** and **DataManager** to be instantiated.
 
 Until this moment, this library include just a simple **DataManager** for the MongoEngine.
 
@@ -92,7 +92,7 @@ class YourRequestRestHandler(python_rest_handler.RequestRestHandler):
 Tip: You can create a general data manager, and let the user subclass your DataManager when he/she wants to customize some behavior, for example:
 
 ```python
-class AnimalDataManager(MyDataManager):
+class AnimalDataManager(YourDataManager):
     def instance_list(self):
         return Animal.objects.filter(user=current_user)
 ```
@@ -135,13 +135,13 @@ ROUTES = python_rest_handler.routes(ROUTES)
 The library does not support auto-pluralization yet, so you may want to change the prefix:
 
 ```python
-rest_routes(Animal, prefix='animals'),
+ROUTES = rest_routes(Animal, prefix='animals')
 ```
 
 You can also define to where will be redirect after an action succeed:
 
 ```python
-rest_routes(Animal, prefix='animals', redirect_pos_action='/animals'),
+ROUTES = rest_routes(Animal, prefix='animals', redirect_pos_action='/animals')
 ```
 
 
