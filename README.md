@@ -9,9 +9,8 @@ This project was born from **Tornado Rest Handler** (https://github.com/pauloche
 
 * [Basic Example of Usage](#basic-example-of-usage)
   * [Routes](#routes)
-  * [Handlers](#handlers)
-  * [Request Managers](#request-managers)
   * [Data Managers](#data-managers)
+  * [Handlers](#handlers)
   * [Templates](#templates)
 * [Plugins](#plugins)
 * [Installation](#installation)
@@ -21,9 +20,82 @@ This project was born from **Tornado Rest Handler** (https://github.com/pauloche
 Basic Example of Usage
 ------------------------
 
-Check the project **Tornado Rest Handler** (https://github.com/paulocheque/tornado-rest-handler) for a real example.
+To use the rest handler logic, it is necessary to implement a **python_rest_handler.RestRequestHandler** class and at least one **DataManager**. Then it is possible to use the **rest_routes** fabric method or it is possible to inherit your request handler manually. Check the next sections for more details.
 
-With +-10 lines of code you can create a handler for your ORM.
+PS: The project **Tornado Rest Handler** (https://github.com/paulocheque/tornado-rest-handler) contains a real example.
+
+Handlers
+------------------------
+
+All the get/post/put/delete methods are implemented for you, but if you want to customize some behavior, you write your own handler:
+
+```python
+import python_rest_handler
+
+class YourRequestRestHandler(YOUR_FRAMEWORK_BASE_HANDLER, python_rest_handler.RestRequestHandler):
+    def raise403(self): pass
+    def raise404(self): pass
+    def get_request_uri(self): pass
+    def get_request_data(self): return {}
+    def render(self, template_name, **kwargs): pass
+    def redirect(self, url, permanent=False, status=None, **kwargs): pass
+```
+
+Also, it is necessary to link your request handler to the get/post/put/delete methods of the **RestHandler** class.
+
+```python
+    def get(self, instance_id=None, edit=False): # or other method here
+    	# next line is the required link
+        return self.rest_handler.get(instance_id=instance_id, edit=edit)
+
+    def post(self, instance_id=None, action=None): # or other method here
+	    # next line is the required link
+        return self.rest_handler.post(instance_id=instance_id, action=action)
+
+    def put(self, instance_id): # or other method here
+	    # next line is the required link
+        return self.rest_handler.put(instance_id=instance_id)
+
+    def delete(self, instance_id): # or other method here
+	    # next line is the required link
+        return self.rest_handler.delete(instance_id=instance_id)
+```
+
+Just be sure that a **RequestRestHandler** **requires** a **model** and **DataManager** to be instantiated.
+
+Until this moment, this library include just a simple **DataManager** for the MongoEngine.
+
+
+Data Managers
+------------------------
+
+To create a Data Manager for your ORM you must override the **DataManager** class and implement the following methods:
+
+```python
+from python_rest_handler import DataManager
+
+class YourDataManager(DataManager):
+    def instance_list(self): return []
+    def find_instance_by_id(self, instance_id): pass
+    def save_instance(self, data): pass
+    def update_instance(self, instance, data): pass
+    def delete_instance(self, instance): pass
+```
+
+After that, you may use the Data Manager in any RequestRestHandler you want to:
+
+```python
+class YourRequestRestHandler(python_rest_handler.RequestRestHandler):
+    data_manager = YourDataManager
+```
+
+Tip: You can create a general data manager, and let the user subclass your DataManager when he/she wants to customize some behavior, for example:
+
+```python
+class AnimalDataManager(MyDataManager):
+    def instance_list(self):
+        return Animal.objects.filter(user=current_user)
+```
 
 Routes
 ------------------------
@@ -46,22 +118,18 @@ One handler manage every Rest routes:
 
 To specify the Rest routes in your Web framework you can use the method **rest_routes**:
 
-In the sections *Handlers*, *Request Managers* and *Data Managers* you get information of how to create a **SomeImplementationOfRestHandler** class.
-
 ```python
 import python_rest_handler
-python_rest_handler.RestHandler
 
-class SomeImplementationOfRestHandler(…): pass
+class SomeImplementationOfRestHandler(BASE_CLASS_OF_YOUR_FRAMEWORK, python_rest_handler.RestRequestHandler): pass
 
-ROUTES = [
-    # another handlers here
+ROUTES = python_rest_handler.rest_routes(Animal, YourDataManager, YourRequestRestHandler),
+```
 
-    python_rest_handler.rest_routes(Animal, handler=SomeImplementationOfRestHandler),
+The **routes** is a useful function in case you want to include a call of the **rest_routes** function inside of a list. It just flat the list with depth 1.
 
-    # another handlers here
-]
-ROUTES = python_rest_handler.routes(ROUTES)
+```python
+ROUTES = python_rest_handler.routes(ROUTES) 
 ```
 
 The library does not support auto-pluralization yet, so you may want to change the prefix:
@@ -76,81 +144,6 @@ You can also define to where will be redirect after an action succeed:
 rest_routes(Animal, prefix='animals', redirect_pos_action='/animals'),
 ```
 
-Handlers
-------------------------
-
-All the get/post/put/delete methods are implemented for you, but if you want to customize some behavior, you write your own handler:
-
-```python
-class AnimalHandler(RestHandler):
-    pass # your custom methods here
-```
-
-And then, registered it:
-
-```python
-rest_routes(Animal, handler=AnimalHandler),
-```
-
-Just be sure that a RestHandler **requires** a RequestManager and a DataManager, but this library does not offer any one of those. 
-
-But sections *Request Managers* and *Data Managers* will give details of how you can implement them.
-
-But you want a real example, you can check the library **Tornado Rest Handler** (https://github.com/paulocheque/tornado-rest-handler).
-
-Request Managers
-------------------------
-
-To create a Request Manager for your Web Framework, you must override the **RequestManager** class and implement the following methods:
-
-```python
-from python_rest_handler import RestHandler, DataManager, RequestManager
-
-class MyWebFrameworkRequestManager(RequestManager):
-    def raise403(self): pass
-    def raise404(self): pass
-    def get_request_data(self): return {}
-    def render(self, template_name, **kwargs): pass
-    def redirect(self, url, permanent=False, status=None, **kwargs): pass
-```
-
-After that, you may use the Request Manager in any RestHandler you want to:
-
-```python
-class MyRestHandler(RestHandler):
-    request_manager = MyWebFrameworkRequestManager
-```
-
-Data Managers
-------------------------
-
-To create a Data Manager for your ORM you must override the **DataManager** class and implement the following methods:
-
-```python
-from python_rest_handler import RestHandler, DataManager, RequestManager
-
-class MyDataManager(DataManager):
-    def instance_list(self): return []
-    def find_instance_by_id(self, instance_id): pass
-    def save_instance(self, data): pass
-    def update_instance(self, instance, data): pass
-    def delete_instance(self, instance): pass
-```
-
-After that, you may use the Data Manager in any RestHandler you want to:
-
-```python
-class MyRestHandler(RestHandler):
-    data_manager = MyDataManager
-```
-
-Tip: You can create a general data manager, and let the user subclass your DataManager when he/shw wants to customize some behavior, for example:
-
-```python
-class AnimalDataManager(MyDataManager):
-    def instance_list(self):
-        return Animal.objects.filter(...)
-```
 
 
 Templates
@@ -181,10 +174,15 @@ Plugins
 ------------
 You can pass additional functions to your templates. This library include functions that generate widgets according to a Twitter-Bootstrap template.
 
-TODO: complete documentation here
-
 ```python
 from python_rest_handler.plugins.bootstrap import *
+
+extra_attributes = {'bs_input_text': bs_input_text,
+                    'bs_input_password':bs_input_password,
+                    'bs_select_field':bs_select_field,
+                    'bs_button':bs_button}
+
+rest_routes(Animal, extra_attributes=extra_attributes),
 ```
 
 
@@ -234,9 +232,9 @@ Change Log
 #### 0.0.1 (2013/03/30)
 
 * [important] This project is an abstraction of tornado-rest-handler. Now tornado-rest-handler will use this project.
-* [new] It has all features of tornado-rest-handler 0.0.5 (besides the Tornado Request Manager and MongoEngine Data Manager)
-* [new] Plugin support
-* [new] Bootstrap plugin: input_field, password_field, select_field, button
+* [new] It has all features of tornado-rest-handler 0.0.5 (besides the Tornado Request Manager and MongoEngine Data Manager).
+* [new] Plugin support.
+* [new] Bootstrap plugin: bs_input_text, bs_input_password, bs_select_field, bs_button.
 
 
 TODO
@@ -245,4 +243,4 @@ TODO
 * Pagination
 * i18n
 * pluralize urls
-
+* bootstrap plugin: delete button, edit button
