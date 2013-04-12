@@ -39,6 +39,23 @@ def bs_input_password(field, value=None, error=None, **kwargs):
     return bs_input_text(field, value=value, error=error, **kwargs)
 
 
+def bs_text_area(field, value=None, error=None, **kwargs):
+    label = kwargs.get('label', field)
+    value = value if value else ''
+    required = kwargs.get('required', True)
+    required = 'required=""' if required else ''
+    editable = kwargs.get('editable', True)
+    editable = '' if editable else 'uneditable-input'
+    maxlength = kwargs.get('maxlength', '')
+
+    widget = '''
+<textarea id="%(field)s" name="%(field)s" placeholder="%(label)s"
+class="input-xlarge %(editable)s" %(required)s maxlength="%(maxlength)s">%(value)s</textarea>
+''' % \
+    {'field':field, 'label':label, 'required':required, 'editable':editable, 'value':value, 'maxlength': maxlength}
+    return bootstrap_panel(field, widget, error=error, **kwargs)
+
+
 def bs_select_field(field, options, error=None, **kwargs):
     required = kwargs.get('required', True)
     required = 'required=""' if required else ''
