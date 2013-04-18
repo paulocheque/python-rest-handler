@@ -5,6 +5,9 @@ VERSION = open('VERSION', 'r').read().strip()
 PROJECT_NAME = 'python-rest-handler'
 
 tests_require = [
+    'nose',
+    'coverage',
+    'mongoengine',
 ]
 
 install_requires = [
