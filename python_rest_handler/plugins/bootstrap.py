@@ -61,10 +61,10 @@ def bs_select_field(field, options, error=None, **kwargs):
     required = 'required=""' if required else ''
     editable = kwargs.get('editable', True)
     editable = '' if editable else 'uneditable-input'
-    selected_value = kwargs.get('selected_value', '')
+    selected_value = str(kwargs.get('selected_value', ''))
     option_widgets = []
     for option in options:
-        option_value = option['value']
+        option_value = str(option['value'])
         option_label = option['label']
         selected = 'selected="selected"' if selected_value == option_value else ''
         option_widget = '<option value="%(option_value)s" %(selected)s>%(option_label)s</option>' % \
