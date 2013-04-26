@@ -17,7 +17,7 @@ def bootstrap_panel(field, widget, error=None, **kwargs):
 ''' % {'has_error':has_error, 'label':label, 'widget':widget, 'error':error, 'help_text':help_text}
 
 
-def bs_input_text(field, value=None, error=None, **kwargs):
+def bs_input_field(field, value=None, error=None, **kwargs):
     input_type = kwargs.get('input_type', 'text')
     label = kwargs.get('label', field)
     value = value if value else ''
@@ -34,9 +34,20 @@ def bs_input_text(field, value=None, error=None, **kwargs):
     return bootstrap_panel(field, widget, error=error, **kwargs)
 
 
+def bs_input_text(field, value=None, error=None, **kwargs):
+    kwargs['input_type'] = 'text'
+    return bs_input_field(field, value=value, error=error, **kwargs)
+
+
 def bs_input_password(field, value=None, error=None, **kwargs):
     kwargs['input_type'] = 'password'
-    return bs_input_text(field, value=value, error=error, **kwargs)
+    return bs_input_field(field, value=value, error=error, **kwargs)
+
+
+def bs_input_file(field, **kwargs):
+    kwargs.pop('value', None)
+    kwargs['input_type'] = 'file'
+    return bs_input_field(field, value=None, **kwargs)
 
 
 def bs_text_area(field, value=None, error=None, **kwargs):
