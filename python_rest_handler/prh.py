@@ -51,7 +51,7 @@ class CrudHandler(object):
                     value_for=value_for, has_error=has_error, error_for=error_for)
 
     def page_edit(self, instance, exception=None, alert=None):
-        if not self.handler.edit_enabled:
+        if instance and not self.handler.edit_enabled:
             return self.handler.raise405()
         errors = None
         if exception:
