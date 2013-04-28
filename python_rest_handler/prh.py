@@ -108,9 +108,11 @@ class RestHandler(CrudHandler):
 
     Since HTML5-forms does not support PUT/DELETE. It is possible to use those two methods above.
     '''
+    GET_NEW = re.compile('^/.+/new')
+    POST_DELETE = re.compile('^/.+/delete')
 
     def get(self, instance_id=None, edit=False):
-        if re.match('^/.+/new', self.handler.get_request_uri()):
+        if self.GET_NEW.match(self.handler.get_request_uri()):
             return self.page_new()
         if instance_id:
             instance = self.action_read(instance_id, fail_silently=True)
@@ -125,7 +127,7 @@ class RestHandler(CrudHandler):
             return self.page_list()
 
     def post(self, instance_id=None, action=None):
-        if instance_id and re.match('^/.+/delete', self.handler.get_request_uri()):
+        if instance_id and self.POST_DELETE.match(self.handler.get_request_uri()):
             return self.action_delete(instance_id)
         if instance_id:
             return self.action_update(instance_id)
