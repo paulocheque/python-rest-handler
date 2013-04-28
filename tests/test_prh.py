@@ -142,6 +142,7 @@ class RestHandlerTests(unittest.TestCase):
         self.assertEquals([func], cls.extra_attributes)
 
     def test_it_must_add_number_sufix_in_the_class_name_to_avoid_conflict(self):
+        dynamic_classes_cache.clear()
         class CustomHandler(RestRequestHandler):
             pass
         cls = rest_handler(Model, DM, CustomHandler)
@@ -150,8 +151,179 @@ class RestHandlerTests(unittest.TestCase):
         self.assertEquals('ModelCustomHandler2', cls.__name__)
 
 
+    def test_handler_can_disable_some_actions_with_exclude(self):
+        class CustomHandler(RestRequestHandler): pass
+        handler_cls = rest_handler(Model, DM, CustomHandler, exclude=['new'])
+        self.assertEquals(False, handler_cls.new_enabled)
+        self.assertEquals(True, handler_cls.show_enabled)
+        self.assertEquals(True, handler_cls.list_enabled)
+        self.assertEquals(True, handler_cls.edit_enabled)
+        self.assertEquals(True, handler_cls.delete_enabled)
+        handler_cls = rest_handler(Model, DM, CustomHandler, exclude=['list', 'edit', 'show'])
+        self.assertEquals(True, handler_cls.new_enabled)
+        self.assertEquals(False, handler_cls.show_enabled)
+        self.assertEquals(False, handler_cls.list_enabled)
+        self.assertEquals(False, handler_cls.edit_enabled)
+        self.assertEquals(True, handler_cls.delete_enabled)
+
+    def test_handler_can_activate_only_some_actions_with_only(self):
+        class CustomHandler(RestRequestHandler): pass
+        handler_cls = rest_handler(Model, DM, CustomHandler, only=['new'])
+        self.assertEquals(True, handler_cls.new_enabled)
+        self.assertEquals(False, handler_cls.show_enabled)
+        self.assertEquals(False, handler_cls.list_enabled)
+        self.assertEquals(False, handler_cls.edit_enabled)
+        self.assertEquals(False, handler_cls.delete_enabled)
+        handler_cls = rest_handler(Model, DM, CustomHandler, only=['list', 'edit', 'show'])
+        self.assertEquals(False, handler_cls.new_enabled)
+        self.assertEquals(True, handler_cls.show_enabled)
+        self.assertEquals(True, handler_cls.list_enabled)
+        self.assertEquals(True, handler_cls.edit_enabled)
+        self.assertEquals(False, handler_cls.delete_enabled)
+
+
+    def test_handler_returns_405_if_new_is_disabled(self):
+        class CustomHandler(RestRequestHandler):
+            def __init__(self): self.status_code = 0
+            def raise405(self): self.status_code = 405
+            def get_request_uri(self): return '/x/new'
+        handler_cls = rest_handler(Model, DM, CustomHandler, exclude=['new'])
+        rr = handler_cls()
+        rr.rest_handler.get()
+        self.assertEquals(405, rr.status_code)
+
+        rr.status_code = 0
+        rr.rest_handler.post()
+        self.assertEquals(405, rr.status_code)
+
+    def test_handler_returns_405_if_show_is_disabled(self):
+        class CustomHandler(RestRequestHandler):
+            def __init__(self): self.status_code = 0
+            def raise405(self): self.status_code = 405
+            def get_request_uri(self): return '/x'
+        handler_cls = rest_handler(Model, DM, CustomHandler, exclude=['show'])
+        rr = handler_cls()
+        def action_read(instance_id, fail_silently=False):
+            return Model()
+        rr.rest_handler.action_read = action_read
+        rr.rest_handler.get(1)
+        self.assertEquals(405, rr.status_code)
+
+    def test_handler_returns_405_if_list_is_disabled(self):
+        class CustomHandler(RestRequestHandler):
+            def __init__(self): self.status_code = 0
+            def raise405(self): self.status_code = 405
+            def get_request_uri(self): return '/x'
+        handler_cls = rest_handler(Model, DM, CustomHandler, exclude=['list'])
+        rr = handler_cls()
+        rr.rest_handler.get()
+        self.assertEquals(405, rr.status_code)
+
+    def test_handler_returns_405_if_edit_is_disabled(self):
+        class CustomHandler(RestRequestHandler):
+            def __init__(self): self.status_code = 0
+            def raise405(self): self.status_code = 405
+            def get_request_uri(self): return '/x/edit'
+        handler_cls = rest_handler(Model, DM, CustomHandler, exclude=['edit'])
+        rr = handler_cls()
+        def action_read(instance_id, fail_silently=False):
+            return Model()
+        rr.rest_handler.action_read = action_read
+        rr.rest_handler.get(1, edit=True)
+        self.assertEquals(405, rr.status_code)
+
+        rr.status_code = 0
+        rr.rest_handler.post(1)
+        self.assertEquals(405, rr.status_code)
+
+        rr.status_code = 0
+        rr.rest_handler.put(1)
+        self.assertEquals(405, rr.status_code)
+
+    def test_handler_returns_405_if_delete_is_disabled(self):
+        class CustomHandler(RestRequestHandler):
+            def __init__(self): self.status_code = 0
+            def raise405(self): self.status_code = 405
+            def get_request_uri(self): return '/x/delete'
+        handler_cls = rest_handler(Model, DM, CustomHandler, exclude=['delete'])
+        rr = handler_cls()
+        def action_read(instance_id, fail_silently=False):
+            return Model()
+        rr.rest_handler.action_read = action_read
+        rr.rest_handler.delete(1)
+        self.assertEquals(405, rr.status_code)
+
+        rr.status_code = 0
+        rr.rest_handler.post(1)
+        self.assertEquals(405, rr.status_code)
+
+
 class RestRoutesTests(unittest.TestCase):
-    def test_rest_routes_created_routes_using_model_name_as_route_prefix(self):
+    def test_generates_5_routes(self):
+        class CustomHandler(RestRequestHandler): pass
+        routes = rest_routes(Model, DM, CustomHandler)
+        self.assertEquals(5, len(routes))
+
+
+    def test_can_generates_only_necessary_routes_for_list(self):
+        class CustomHandler(RestRequestHandler): pass
+        routes = rest_routes(Model, DM, CustomHandler, only=['list'])
+        self.assertEquals(1, len(routes))
+
+    def test_can_generates_only_necessary_routes_for_show(self):
+        class CustomHandler(RestRequestHandler): pass
+        routes = rest_routes(Model, DM, CustomHandler, only=['show'])
+        self.assertEquals(1, len(routes))
+
+    def test_can_generates_only_necessary_routes_for_new(self):
+        class CustomHandler(RestRequestHandler): pass
+        routes = rest_routes(Model, DM, CustomHandler, only=['new'])
+        self.assertEquals(2, len(routes))
+
+    def test_can_generates_only_necessary_routes_for_edit(self):
+        class CustomHandler(RestRequestHandler): pass
+        routes = rest_routes(Model, DM, CustomHandler, only=['edit'])
+        self.assertEquals(2, len(routes))
+
+    def test_can_generates_only_necessary_routes_for_delete(self):
+        class CustomHandler(RestRequestHandler): pass
+        routes = rest_routes(Model, DM, CustomHandler, only=['delete'])
+        self.assertEquals(2, len(routes))
+
+
+    def test_can_generates_all_necessary_routes_except_for_list(self):
+        class CustomHandler(RestRequestHandler): pass
+        routes = rest_routes(Model, DM, CustomHandler, exclude=['list'])
+        self.assertEquals(5, len(routes))
+
+    def test_can_generates_all_necessary_routes_except_for_show(self):
+        class CustomHandler(RestRequestHandler): pass
+        routes = rest_routes(Model, DM, CustomHandler, exclude=['show'])
+        self.assertEquals(5, len(routes))
+
+    def test_can_generates_all_necessary_routes_except_for_new(self):
+        class CustomHandler(RestRequestHandler): pass
+        routes = rest_routes(Model, DM, CustomHandler, exclude=['new'])
+        self.assertEquals(4, len(routes))
+
+    def test_can_generates_all_necessary_routes_except_for_edit(self):
+        class CustomHandler(RestRequestHandler): pass
+        routes = rest_routes(Model, DM, CustomHandler, exclude=['edit'])
+        self.assertEquals(4, len(routes))
+
+    def test_can_generates_all_necessary_routes_except_for_delete(self):
+        class CustomHandler(RestRequestHandler): pass
+        routes = rest_routes(Model, DM, CustomHandler, exclude=['delete'])
+        self.assertEquals(4, len(routes))
+
+
+    def test_exclude_overrides_only_behavior(self):
+        class CustomHandler(RestRequestHandler): pass
+        routes = rest_routes(Model, DM, CustomHandler, only='list', exclude=['list'])
+        self.assertEquals(0, len(routes))
+
+
+    def test_created_routes_using_model_name_as_route_prefix(self):
         class CustomHandler(RestRequestHandler):
             pass
         routes = rest_routes(Model, DM, CustomHandler)

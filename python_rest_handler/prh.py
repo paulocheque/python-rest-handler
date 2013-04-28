@@ -32,12 +32,18 @@ class CrudHandler(object):
         return self.handler.redirect(url, permanent=permanent, status=status, **kwargs)
 
     def page_list(self, alert=None):
+        if not self.handler.list_enabled:
+            return self.handler.raise405()
         return self.render(self.handler.list_template, objs=self.handler.data_manager.instance_list(), alert=alert)
 
     def page_new(self):
+        if not self.handler.new_enabled:
+            return self.handler.raise405()
         return self.page_edit(None)
 
     def page_show(self, instance):
+        if not self.handler.show_enabled:
+            return self.handler.raise405()
         value_for = lambda field: getattr(instance, field, '') if getattr(instance, field, '') else ''
         has_error = lambda field: False
         error_for = lambda field: ''
@@ -45,6 +51,8 @@ class CrudHandler(object):
                     value_for=value_for, has_error=has_error, error_for=error_for)
 
     def page_edit(self, instance, exception=None, alert=None):
+        if not self.handler.edit_enabled:
+            return self.handler.raise405()
         errors = None
         if exception:
             alert = 'Data sent contains some issues.'
@@ -58,6 +66,8 @@ class CrudHandler(object):
                     value_for=value_for, has_error=has_error, error_for=error_for)
 
     def action_create(self):
+        if not self.handler.new_enabled:
+            return self.handler.raise405()
         data = self.handler.get_request_data()
         try:
             self.handler.data_manager.save_instance(data)
@@ -76,6 +86,8 @@ class CrudHandler(object):
             self.handler.raise404()
 
     def action_update(self, instance_id):
+        if not self.handler.edit_enabled:
+            return self.handler.raise405()
         data = self.handler.get_request_data()
         instance = self.action_read(instance_id)
         try:
@@ -85,6 +97,8 @@ class CrudHandler(object):
             return self.page_edit(instance, exception=e)
 
     def action_delete(self, instance_id):
+        if not self.handler.delete_enabled:
+            return self.handler.raise405()
         instance = self.action_read(instance_id)
         try:
             self.handler.data_manager.delete_instance(instance)
@@ -141,6 +155,10 @@ class RestHandler(CrudHandler):
 
 
 class RestRequestHandler(object):
+    '''
+    It will also receive from a metaclass the "rest_handler" attribute that contains a RestHandler instance.
+    It will also receive the following booleans: new_enabled, show_enabled, list_enabled, edit_enabled, delete_enabled
+    '''
     model = None
     data_manager = None
     template_path = None
@@ -151,6 +169,7 @@ class RestRequestHandler(object):
     extra_attributes = None
     def raise403(self): pass
     def raise404(self): pass
+    def raise405(self): pass
     def get_request_uri(self): pass
     def get_request_data(self): return {}
     def render(self, template_name, **kwargs): pass
@@ -202,26 +221,60 @@ def get_unique_handler_class_name(model, base_handler):
 
 
 def rest_handler(model, data_manager, base_handler, handler=None, **kwargs):
+    only = set(kwargs.get('only', []))
+    exclude = set(kwargs.get('exclude', []))
+    if not only:
+        only = set(('new', 'list', 'show', 'edit', 'delete'))
+    available_actions = only - exclude
+
     attrs = {}
     attrs.update(kwargs)
     attrs['model'] = model
     attrs['data_manager'] = data_manager
+    attrs['new_enabled'] = 'new' in available_actions
+    attrs['show_enabled'] = 'show' in available_actions
+    attrs['list_enabled'] = 'list' in available_actions
+    attrs['edit_enabled'] = 'edit' in available_actions
+    attrs['delete_enabled'] = 'delete' in available_actions
 
     unique_class_name = get_unique_handler_class_name(model, base_handler)
 
     if handler:
-        rest_handler = type(unique_class_name, (handler, base_handler), attrs)
+        rest_handler_cls = type(unique_class_name, (handler, base_handler), attrs)
     else:
-        rest_handler = type(unique_class_name, (base_handler,), attrs)
-    return rest_handler
+        rest_handler_cls = type(unique_class_name, (base_handler,), attrs)
+    return rest_handler_cls
 
 
 def rest_routes(model, data_manager, base_handler, handler=None, **kwargs):
     prefix = kwargs.get('prefix', model.__name__.lower())
+    only = set(kwargs.get('only', []))
+    exclude = set(kwargs.get('exclude', []))
     handler = rest_handler(model, data_manager, base_handler, handler=handler, **kwargs)
-    return [
-        (r'/%s/?' % prefix, handler),
-        (r'/%s/new/?' % prefix, handler),
-        (r'/%s/([0-9a-fA-F]{24,})/?' % prefix, handler),
-        (r'/%s/([0-9a-fA-F]{24,})/(edit|delete|)/?' % prefix, handler),
-    ]
+    routes = []
+
+    if not only:
+        only = set(('new', 'show', 'list', 'edit', 'delete'))
+    active_routes = only - exclude
+
+    if active_routes.intersection(set(['new', 'list'])):
+        route = (r'/%s/?' % prefix, handler)
+        routes.append(route)
+
+    if active_routes.intersection(set(['new'])):
+        route = (r'/%s/new/?' % prefix, handler)
+        routes.append(route)
+
+    if active_routes.intersection(set(['show', 'edit', 'delete'])):
+        route = (r'/%s/([0-9a-fA-F]{24,})/?' % prefix, handler)
+        routes.append(route)
+
+    if active_routes.intersection(set(['edit'])):
+        route = (r'/%s/([0-9a-fA-F]{24,})/(edit)/?' % prefix, handler)
+        routes.append(route)
+
+    if active_routes.intersection(set(['delete'])):
+        route = (r'/%s/([0-9a-fA-F]{24,})/(delete)/?' % prefix, handler)
+        routes.append(route)
+    return routes
+
