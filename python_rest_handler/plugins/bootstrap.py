@@ -101,3 +101,15 @@ def bs_button(**kwargs):
 ''' % {'button_id':button_id, 'label':label}
 
     return bootstrap_panel(None, widget, **kwargs)
+
+
+ADDITIONAL_FUNCTIONS = {
+    'bootstrap_panel':bootstrap_panel,
+    'bs_input_field':bs_input_field,
+    'bs_input_text':bs_input_text,
+    'bs_input_password':bs_input_password,
+    'bs_input_file':bs_input_file,
+    'bs_text_area':bs_text_area,
+    'bs_select_field':bs_select_field,
+    'bs_button':bs_button,
+}

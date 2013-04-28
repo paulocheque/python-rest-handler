@@ -207,6 +207,17 @@ def routes(route_list):
     return routes
 
 
+active_plugins = {}
+def activate_plugin(name):
+    if name == 'bootstrap':
+        from python_rest_handler.plugins.bootstrap import ADDITIONAL_FUNCTIONS
+        active_plugins[name] = ADDITIONAL_FUNCTIONS
+
+def deactivate_plugin(name):
+    if name in active_plugins:
+        del active_plugins[name]
+
+
 dynamic_classes_cache = {}
 
 def get_unique_handler_class_name(model, base_handler):
@@ -226,6 +237,12 @@ def rest_handler(model, data_manager, base_handler, handler=None, **kwargs):
     if not only:
         only = set(('new', 'list', 'show', 'edit', 'delete'))
     available_actions = only - exclude
+
+    if active_plugins:
+        extra_attributes = kwargs.get('extra_attributes', {})
+        for plugin in list(active_plugins.values()):
+            extra_attributes.update(plugin)
+        kwargs['extra_attributes'] = extra_attributes
 
     attrs = {}
     attrs.update(kwargs)

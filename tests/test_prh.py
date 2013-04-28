@@ -133,13 +133,13 @@ class RestHandlerTests(unittest.TestCase):
         func = lambda x: x
         cls = rest_handler(Model, DM, CustomHandler, template_path='x/', list_template='list.json',
             edit_template='edit.json', show_template='show.json', redirect_pos_action='/x',
-            extra_attributes=[func])
+            extra_attributes={'func': func})
         self.assertEquals('x/', cls.template_path)
         self.assertEquals('list.json', cls.list_template)
         self.assertEquals('edit.json', cls.edit_template)
         self.assertEquals('show.json', cls.show_template)
         self.assertEquals('/x', cls.redirect_pos_action)
-        self.assertEquals([func], cls.extra_attributes)
+        self.assertEquals({'func': func}, cls.extra_attributes)
 
     def test_it_must_add_number_sufix_in_the_class_name_to_avoid_conflict(self):
         dynamic_classes_cache.clear()
@@ -256,6 +256,27 @@ class RestHandlerTests(unittest.TestCase):
         rr.status_code = 0
         rr.rest_handler.post(1)
         self.assertEquals(405, rr.status_code)
+
+
+class PluginRestHandlerTests(unittest.TestCase):
+    def tearDown(self):
+        deactivate_plugin('bootstrap')
+
+    def test_invalid_plugin_does_nothing(self):
+        activate_plugin('invalid plugin')
+        self.assertEquals(0, len(active_plugins))
+
+        class CustomHandler(RestRequestHandler): pass
+        handler_cls = rest_handler(Model, DM, CustomHandler)
+        self.assertEquals(None, handler_cls.extra_attributes)
+
+    def test_bootstrap_plugin_add_8_functions_to_templates(self):
+        activate_plugin('bootstrap')
+        self.assertEquals(1, len(active_plugins))
+
+        class CustomHandler(RestRequestHandler): pass
+        handler_cls = rest_handler(Model, DM, CustomHandler)
+        self.assertEquals(8, len(handler_cls.extra_attributes))
 
 
 class RestRoutesTests(unittest.TestCase):
