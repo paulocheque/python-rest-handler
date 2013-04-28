@@ -129,7 +129,7 @@ ROUTES = python_rest_handler.rest_routes(Animal, YourDataManager, YourRequestRes
 The **routes** is a useful function in case you want to include a call of the **rest_routes** function inside of a list. It just flat the list with depth 1.
 
 ```python
-ROUTES = python_rest_handler.routes(ROUTES) 
+ROUTES = python_rest_handler.routes(ROUTES)
 ```
 
 The library does not support auto-pluralization yet, so you may want to change the prefix:
@@ -210,7 +210,7 @@ pip install -e git+git@github.com:paulocheque/python-rest-handler.git#egg=python
 #### requirements.txt
 
 ```
-python-rest-handler==0.0.1
+python-rest-handler==0.0.2
 # or use the development version
 git+git://github.com/paulocheque/python-rest-handler.git#egg=python-rest-handler
 ```
@@ -228,6 +228,15 @@ pip install python-rest-handler --upgrade --no-deps
 
 Change Log
 -------------
+
+#### 0.0.2 (2013/04/28)
+
+* [new] Bootstrap plugin has two more functions: <code>bs_text_area</code> and <code>bs_input_file</code>.
+* [new] Now it is possible to select which routes and actions you want to create, using the <code>only</code> and <code>exclude</code> parameter. Options are: <code>new</code>, <code>show</code>, <code>list</code>, <code>edit</code> and <code>delete</code>
+* [new] Now is possible to activate and deactivate plugins for all rest_routes using the <code>activate_plugin</code> and <code>deactivate_plugin</code> methods.
+* [bugfix] The selected_value for <code>bs_select_field</code> in the Bootstrap plugin now convert the value to string.
+* [bugfix] Fixed setup.py dependencies.
+* [optimization] Regular expressions are now pre-compiled.
 
 #### 0.0.1 (2013/03/30)
 
