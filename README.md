@@ -3,6 +3,8 @@ python-rest-handler
 
 ![Continuous Integration Status](https://secure.travis-ci.org/paulocheque/python-rest-handler.png)
 
+#### Latest version: 0.0.2 (2013/04/28)
+
 A simple and abstract library to create Rest Handlers for different Web frameworks and ORMs.
 
 This project was born from **Tornado Rest Handler** (https://github.com/paulocheque/tornado-rest-handler). It is an abstract layer of that project to allow the code be used by another Web frameworks.
