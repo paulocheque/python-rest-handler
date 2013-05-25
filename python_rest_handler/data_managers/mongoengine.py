@@ -7,7 +7,10 @@ class MongoEngineDataManager(DataManager):
         return self.model.objects.all()
 
     def find_instance_by_id(self, instance_id):
-        return self.instance_list().get(pk=instance_id)
+        try:
+            return self.instance_list().get(pk=instance_id)
+        except self.model.DoesNotExist:
+            self.handler.raise404()
 
     def save_instance(self, data):
         instance = self.model(**data)
